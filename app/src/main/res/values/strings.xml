@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Books</string>
+    <string name="edit_text_query_hint">Search Books</string>
+</resources>
