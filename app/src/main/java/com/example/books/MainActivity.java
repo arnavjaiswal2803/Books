@@ -3,10 +3,14 @@ package com.example.books;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,7 +23,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<Book>>{
 
-    private static final String BOOK_API_REQUEST_URL = "https://www.googleapis.com/books/v1/volumes?q=Dove";
+    private static final String BOOK_API_REQUEST_URL = "https://www.googleapis.com/books/v1/volumes";
 
     private static final String LOG_TAG = MainActivity.class.getName();
 
@@ -31,6 +35,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Button search = (Button) findViewById(R.id.search);
+        search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LoaderManager.getInstance(MainActivity.this)
+                        .restartLoader(LOADER_ID, null, MainActivity.this);
+
+            }
+        });
 
         TextView emptyView = (TextView) findViewById(R.id.emptyView);
 
@@ -47,21 +61,30 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Book clickedBook = (Book) parent.getItemAtPosition(position);
 
-                Uri infoUrl = Uri.parse(clickedBook.getInfoUrl());
-                Intent intent = new Intent(Intent.ACTION_VIEW, infoUrl);
-                if (intent.resolveActivity(getPackageManager()) != null) {
-                    startActivity(intent);
+                if (clickedBook.getInfoUrl().length() > 0) {
+                    Uri infoUrl = Uri.parse(clickedBook.getInfoUrl());
+                    Intent intent = new Intent(Intent.ACTION_VIEW, infoUrl);
+                    if (intent.resolveActivity(getPackageManager()) != null) {
+                        startActivity(intent);
+                    }
+                } else {
+                    Toast.makeText(MainActivity.this, "InfoUrl not available"
+                            , Toast.LENGTH_SHORT).show();
                 }
             }
         });
-
-        LoaderManager.getInstance(this).initLoader(LOADER_ID, null, this);
     }
 
     @NonNull
     @Override
     public Loader<List<Book>> onCreateLoader(int id, @Nullable Bundle args) {
-        return new BookLoader(this, BOOK_API_REQUEST_URL);
+        EditText query = (EditText) findViewById(R.id.query);
+
+        Uri baseUri = Uri.parse(BOOK_API_REQUEST_URL);
+        Uri.Builder builder = baseUri.buildUpon();
+
+        builder.appendQueryParameter("q", query.getText().toString());
+        return new BookLoader(this, builder.toString());
     }
 
     @Override

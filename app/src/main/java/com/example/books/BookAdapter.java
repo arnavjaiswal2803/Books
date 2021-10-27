@@ -32,7 +32,11 @@ public class BookAdapter extends ArrayAdapter<Book>  {
         Book currentBook = getItem(position);
 
         ImageView image = (ImageView) convertView.findViewById(R.id.image);
-        Glide.with(image.getContext()).load(currentBook.getImageUrl()).into(image);
+        if (currentBook.getImageUrl().length() > 0) {
+            Glide.with(image.getContext()).load(currentBook.getImageUrl()).into(image);
+        } else {
+            image.setVisibility(View.INVISIBLE);
+        }
 
         TextView title = (TextView) convertView.findViewById(R.id.title);
         title.setText(currentBook.getTitle());

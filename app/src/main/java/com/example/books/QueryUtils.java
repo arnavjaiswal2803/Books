@@ -153,20 +153,29 @@ public class QueryUtils {
 
                     JSONObject volumeInfo = item.getJSONObject("volumeInfo");
 
-                    String title = volumeInfo.getString("title");
+                    String title = volumeInfo.optString("title", "Title data not available");
 
-                    JSONArray authors = volumeInfo.getJSONArray("authors");
-                    String author = authors.getString(0);
+                    JSONArray authors = volumeInfo.optJSONArray("authors");
+                    String author;
+                    if (authors != null && authors.length() > 0) {
+                        author = authors.getString(0);
+                    } else {
+                        author = "Author data unavailable";
+                    }
 
                     String description = volumeInfo
                             .optString("description", "No description");
 
-                    JSONObject imageLinks = volumeInfo.getJSONObject("imageLinks");
-                    String imageUrl = imageLinks.getString("thumbnail").substring(0, 4)
-                            + "s" + imageLinks.getString("thumbnail").substring(4);
+                    JSONObject imageLinks = volumeInfo.optJSONObject("imageLinks");
+                    String imageUrl;
+                    if (imageLinks != null) {
+                        imageUrl = imageLinks.getString("thumbnail").substring(0, 4)
+                                + "s" + imageLinks.getString("thumbnail").substring(4);
+                    } else {
+                        imageUrl = "";
+                    }
 
-                    String infoLink = volumeInfo.getString("infoLink").substring(0, 4)
-                            + "s" + volumeInfo.getString("infoLink").substring(4);
+                    String infoLink = volumeInfo.optString("infoLink", "");
 
                     books.add(new Book(imageUrl, title, author, description, infoLink));
                 }
