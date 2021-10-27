@@ -1,27 +1,31 @@
 package com.example.books;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.Loader;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<Book>>{
 
     private static final String BOOK_API_REQUEST_URL = "https://www.googleapis.com/books/v1/volumes?q=Dove";
 
     private static final String LOG_TAG = MainActivity.class.getName();
 
     private BookAdapter mBookAdapter;
+
+    private static final int LOADER_ID = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
         ListView booksListView = (ListView) findViewById(R.id.list_view);
 
         booksListView.setEmptyView(emptyView);
-
 
         mBookAdapter = new BookAdapter(this, new ArrayList<Book>());
 
@@ -52,33 +55,30 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        new BookAsyncTask().execute(BOOK_API_REQUEST_URL);
+        LoaderManager.getInstance(this).initLoader(LOADER_ID, null, this);
     }
 
-    private class BookAsyncTask extends AsyncTask<String, Void, List<Book>> {
+    @NonNull
+    @Override
+    public Loader<List<Book>> onCreateLoader(int id, @Nullable Bundle args) {
+        return new BookLoader(this, BOOK_API_REQUEST_URL);
+    }
 
-        @Override
-        protected List<Book> doInBackground(String... requestUrls) {
-            // Don't perform the request if there are no URLs, or the first URL is null.
-            if (requestUrls.length < 1 || requestUrls[0] == null) {
-                return null;
-            }
+    @Override
+    public void onLoadFinished(@NonNull Loader<List<Book>> loader, List<Book> books) {
+        // Clear the adapter of previous book data
+        mBookAdapter.clear();
 
-            // Perform the HTTP request for book data and process the response.
-            List<Book> books = QueryUtils.fetchBooksData(requestUrls[0]);
-            return books;
+        // If there is a valid list of {@link Book}s, then add them to the adapter's
+        // data set. This will trigger the ListView to update.
+        if (books != null && !books.isEmpty()) {
+            mBookAdapter.addAll(books);
         }
+    }
 
-        @Override
-        protected void onPostExecute(List<Book> books) {
-            // Clear the adapter of previous book data
-            mBookAdapter.clear();
-
-            // If there is a valid list of {@link Book}s, then add them to the adapter's
-            // data set. This will trigger the ListView to update.
-            if (books != null && !books.isEmpty()) {
-                mBookAdapter.addAll(books);
-            }
-        }
+    @Override
+    public void onLoaderReset(@NonNull Loader<List<Book>> loader) {
+        // Clear the adapter of previous book data
+        mBookAdapter.clear();
     }
 }
