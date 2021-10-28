@@ -13,6 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/edit_text_query_hint"
+        android:imeOptions="actionSearch"
         android:inputType="text" />
 
     <RelativeLayout
@@ -24,6 +25,7 @@
             android:id="@+id/search"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:enabled="false"
             android:text="@string/search"
             android:textAllCaps="true"
             android:textStyle="bold" />

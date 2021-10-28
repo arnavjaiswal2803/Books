@@ -6,8 +6,13 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -25,7 +30,7 @@ import androidx.loader.content.Loader;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<Book>>{
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<Book>> {
 
     private static final String BOOK_API_REQUEST_URL = "https://www.googleapis.com/books/v1/volumes";
 
@@ -38,6 +43,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private ProgressBar mProgressBar;
 
     private TextView mEmptyView;
+
+    private EditText mQuery;
+
+    private boolean mIsConnected;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,45 +77,91 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         });
 
+        Button search = (Button) findViewById(R.id.search);
+        search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                performSearch();
+            }
+        });
+
         mEmptyView = (TextView) findViewById(R.id.emptyView);
         booksListView.setEmptyView(mEmptyView);
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
 
         ConnectivityManager connectivityManager =
-                (ConnectivityManager)this.getSystemService(Context.CONNECTIVITY_SERVICE);
+                (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null &&
-                activeNetwork.isConnectedOrConnecting();
+        mIsConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
 
-        if (isConnected) {
-            Button search = (Button) findViewById(R.id.search);
-            search.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    mEmptyView.setVisibility(View.GONE);
-                    mProgressBar.setVisibility(View.VISIBLE);
-
-                    LoaderManager.getInstance(MainActivity.this)
-                            .restartLoader(LOADER_ID, null, MainActivity.this);
-
-                }
-            });
-        } else {
+        if (!mIsConnected) {
             mEmptyView.setText(R.string.no_internet);
+        }
+
+        mQuery = (EditText) findViewById(R.id.query);
+
+        mQuery.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                search.setEnabled(s.toString().trim().length() > 0);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        mQuery.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    performSearch();
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void performSearch() {
+        // Hide keyboard when user clicks search
+        mQuery.clearFocus();
+        InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        in.hideSoftInputFromWindow(mQuery.getWindowToken(), 0);
+
+        // Search
+        if (mIsConnected && mQuery.getText().toString().length() > 0) {
+            mEmptyView.setVisibility(View.GONE);
+            mProgressBar.setVisibility(View.VISIBLE);
+
+            LoaderManager.getInstance(MainActivity.this)
+                    .restartLoader(LOADER_ID, null, MainActivity.this);
+        } else {
+            if (!mIsConnected) {
+                Toast.makeText(this, R.string.no_internet, Toast.LENGTH_SHORT)
+                        .show();
+            } else if (!(mQuery.getText().toString().length() > 0)) {
+                Toast.makeText(this, "Please type something first", Toast.LENGTH_SHORT)
+                        .show();
+            }
         }
     }
 
     @NonNull
     @Override
     public Loader<List<Book>> onCreateLoader(int id, @Nullable Bundle args) {
-        EditText query = (EditText) findViewById(R.id.query);
-
         Uri baseUri = Uri.parse(BOOK_API_REQUEST_URL);
         Uri.Builder builder = baseUri.buildUpon();
 
-        builder.appendQueryParameter("q", query.getText().toString());
+        builder.appendQueryParameter("q", mQuery.getText().toString().trim());
         return new BookLoader(this, builder.toString());
     }
 
@@ -124,13 +179,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
 
         ConnectivityManager connectivityManager =
-                (ConnectivityManager)this.getSystemService(Context.CONNECTIVITY_SERVICE);
+                (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null &&
-                activeNetwork.isConnectedOrConnecting();
+        mIsConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
 
-        if (isConnected) {
+        if (mIsConnected) {
             mEmptyView.setText(R.string.no_books_found);
         } else {
             mEmptyView.setText(R.string.no_internet);
