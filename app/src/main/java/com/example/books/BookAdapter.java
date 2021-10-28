@@ -35,7 +35,7 @@ public class BookAdapter extends ArrayAdapter<Book>  {
         if (currentBook.getImageUrl().length() > 0) {
             Glide.with(image.getContext()).load(currentBook.getImageUrl()).into(image);
         } else {
-            image.setVisibility(View.INVISIBLE);
+            image.setBackgroundResource(R.drawable.no_image_available);
         }
 
         TextView title = (TextView) convertView.findViewById(R.id.title);
