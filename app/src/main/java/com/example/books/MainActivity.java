@@ -1,6 +1,9 @@
 package com.example.books;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,6 +12,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,26 +35,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private static final int LOADER_ID = 1;
 
+    private ProgressBar mProgressBar;
+
+    private TextView mEmptyView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button search = (Button) findViewById(R.id.search);
-        search.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                LoaderManager.getInstance(MainActivity.this)
-                        .restartLoader(LOADER_ID, null, MainActivity.this);
-
-            }
-        });
-
-        TextView emptyView = (TextView) findViewById(R.id.emptyView);
-
         ListView booksListView = (ListView) findViewById(R.id.list_view);
-
-        booksListView.setEmptyView(emptyView);
 
         mBookAdapter = new BookAdapter(this, new ArrayList<Book>());
 
@@ -73,6 +67,35 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 }
             }
         });
+
+        mEmptyView = (TextView) findViewById(R.id.emptyView);
+        booksListView.setEmptyView(mEmptyView);
+
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager)this.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+
+        if (isConnected) {
+            Button search = (Button) findViewById(R.id.search);
+            search.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mEmptyView.setVisibility(View.GONE);
+                    mProgressBar.setVisibility(View.VISIBLE);
+
+                    LoaderManager.getInstance(MainActivity.this)
+                            .restartLoader(LOADER_ID, null, MainActivity.this);
+
+                }
+            });
+        } else {
+            mEmptyView.setText(R.string.no_internet);
+        }
     }
 
     @NonNull
@@ -89,6 +112,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(@NonNull Loader<List<Book>> loader, List<Book> books) {
+        mProgressBar.setVisibility(View.GONE);
+
         // Clear the adapter of previous book data
         mBookAdapter.clear();
 
@@ -96,6 +121,19 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         // data set. This will trigger the ListView to update.
         if (books != null && !books.isEmpty()) {
             mBookAdapter.addAll(books);
+        }
+
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager)this.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+
+        if (isConnected) {
+            mEmptyView.setText(R.string.no_books_found);
+        } else {
+            mEmptyView.setText(R.string.no_internet);
         }
     }
 
