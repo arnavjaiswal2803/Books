@@ -3,5 +3,5 @@
     <string name="edit_text_query_hint">Search Books</string>
     <string name="search">Search</string>
     <string name="no_books_found">No books found</string>
-    <string name="no_internet">No internet</string>
+    <string name="no_internet">No internet connection</string>
 </resources>

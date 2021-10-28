@@ -137,6 +137,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         in.hideSoftInputFromWindow(mQuery.getWindowToken(), 0);
 
+        //Clear adapter
+        mBookAdapter.clear();
+
         // Search
         if (mIsConnected && mQuery.getText().toString().length() > 0) {
             mEmptyView.setVisibility(View.GONE);
