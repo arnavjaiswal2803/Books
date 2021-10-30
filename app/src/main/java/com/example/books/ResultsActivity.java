@@ -104,7 +104,11 @@ public class ResultsActivity extends AppCompatActivity implements LoaderManager.
         if (books != null && !books.isEmpty()) {
             mBookAdapter.addAll(books);
         }
-        mEmptyView.setText(R.string.no_books_found);
+        if (MainActivity.isConnectedToInternet(this)) {
+            mEmptyView.setText(R.string.no_books_found);
+        } else {
+            mEmptyView.setText(R.string.no_internet);
+        }
 
         mBooksListView.setSelectionFromTop(mScrollIndexPosition, mScrollOffsetPosition);
     }

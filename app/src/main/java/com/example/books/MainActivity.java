@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        mIsConnected = isConnectedToInternet();
+        mIsConnected = isConnectedToInternet(this);
     }
 
     private void performSearch() {
@@ -109,9 +109,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean isConnectedToInternet() {
+    public static boolean isConnectedToInternet(Context context) {
         ConnectivityManager connectivityManager =
-                (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
         return (activeNetwork != null && activeNetwork.isConnectedOrConnecting());
