@@ -6,11 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -27,15 +23,25 @@ public class ResultsActivity extends AppCompatActivity implements LoaderManager.
 
     private static final String LOG_TAG = ResultsActivity.class.getName();
 
-    private BookAdapter mBookAdapter;
+    private ListView mBooksListView;
 
-    private static final int LOADER_ID = 1;
+    private BookAdapter mBookAdapter;
 
     private ProgressBar mProgressBar;
 
     private TextView mEmptyView;
 
     private String mRequestUrlString;
+
+    private static final int LOADER_ID = 1;
+
+    private int mScrollIndexPosition = 0;
+
+    private static final String SCROLL_POSITION_INDEX_KEY = "scroll-position-index-key";
+
+    private int mScrollOffsetPosition = 0;
+
+    private static final String SCROLL_POSITION_OFFSET_KEY = "scroll-position-offset-key";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,13 +53,13 @@ public class ResultsActivity extends AppCompatActivity implements LoaderManager.
             mRequestUrlString = extras.getString(MainActivity.REQUEST_URL_KEY);
         }
 
-        ListView booksListView = (ListView) findViewById(R.id.list_view);
+        mBooksListView = (ListView) findViewById(R.id.list_view);
 
         mBookAdapter = new BookAdapter(this, new ArrayList<Book>());
 
-        booksListView.setAdapter(mBookAdapter);
+        mBooksListView.setAdapter(mBookAdapter);
 
-        booksListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mBooksListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Book clickedBook = (Book) parent.getItemAtPosition(position);
@@ -72,7 +78,7 @@ public class ResultsActivity extends AppCompatActivity implements LoaderManager.
         });
 
         mEmptyView = (TextView) findViewById(R.id.emptyView);
-        booksListView.setEmptyView(mEmptyView);
+        mBooksListView.setEmptyView(mEmptyView);
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
 
@@ -99,11 +105,36 @@ public class ResultsActivity extends AppCompatActivity implements LoaderManager.
             mBookAdapter.addAll(books);
         }
         mEmptyView.setText(R.string.no_books_found);
+
+        mBooksListView.setSelectionFromTop(mScrollIndexPosition, mScrollOffsetPosition);
     }
 
     @Override
     public void onLoaderReset(@NonNull Loader<List<Book>> loader) {
         // Clear the adapter of previous book data
         mBookAdapter.clear();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle savedInstanceState) {
+        // Save the user's current scroll position state
+        mScrollIndexPosition = mBooksListView.getFirstVisiblePosition();
+        savedInstanceState.putInt(SCROLL_POSITION_INDEX_KEY, mScrollIndexPosition);
+
+        View v = mBooksListView.getChildAt(0);
+        mScrollOffsetPosition = (v == null) ? 0 : (v.getTop() - mBooksListView.getPaddingTop());
+        savedInstanceState.putInt(SCROLL_POSITION_OFFSET_KEY, mScrollOffsetPosition);
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        // Always call the superclass so it can restore the view hierarchy
+        super.onRestoreInstanceState(savedInstanceState);
+
+        mScrollIndexPosition = savedInstanceState.getInt(SCROLL_POSITION_INDEX_KEY);
+        mScrollOffsetPosition = savedInstanceState.getInt(SCROLL_POSITION_OFFSET_KEY);
     }
 }
